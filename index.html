@@ -2,82 +2,379 @@
 <html><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tim 🐻</title>
+<title>🐻 Tim v2.1</title>
 <style>
-* { margin:0; padding:0; box-sizing:border-box; font-family:-apple-system,sans-serif; }
-body { display:flex; height:100vh; background:#1a1a1a; color:#fff; }
-.sidebar { width:250px; background:#0a0a0a; padding:20px; border-right:1px solid #333; overflow-y:auto; }
-.sidebar h1 { font-size:18px; margin-bottom:20px; }
-.status { padding:12px; background:#222; border-radius:8px; margin-bottom:15px; font-size:13px; }
-.status-dot { display:inline-block; width:8px; height:8px; background:#0f0; border-radius:50%; margin-right:8px; }
-.stat { display:flex; justify-content:space-between; font-size:12px; margin:8px 0; }
-.main { flex:1; display:flex; flex-direction:column; }
-.chat { flex:1; padding:20px; overflow-y:auto; }
-.message { padding:12px; margin:10px 0; border-radius:12px; max-width:70%; }
-.user { background:#0066ff; margin-left:auto; }
-.tim { background:#222; }
-.input-area { padding:15px; border-top:1px solid #333; display:flex; gap:10px; }
-input { flex:1; padding:12px; background:#222; border:1px solid #444; border-radius:20px; color:#fff; outline:none; }
-button { padding:12px 24px; background:#0066ff; border:none; border-radius:20px; color:#fff; cursor:pointer; }
+* { margin:0; padding:0; box-sizing:border-box; font-family:-apple-system,BlinkMacSystemFont,sans-serif; }
+body { display:grid; grid-template-columns:280px 1fr 320px; height:100vh; background:#0a0a0a; color:#fff; overflow:hidden; }
+
+/* LEFT SIDEBAR */
+.left-sidebar { background:#1a1a1a; padding:20px; overflow-y:auto; border-right:1px solid #333; }
+.logo { font-size:20px; font-weight:700; margin-bottom:25px; }
+.status-box { background:#222; padding:15px; border-radius:8px; margin-bottom:20px; cursor:pointer; }
+.status-box:hover { background:#2a2a2a; }
+.status-dot { display:inline-block; width:10px; height:10px; background:#0f0; border-radius:50%; margin-right:8px; animation:pulse 2s infinite; }
+@keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.3; } }
+.info-row { display:flex; justify-content:space-between; margin:8px 0; font-size:13px; }
+.info-label { color:#888; }
+.info-value { color:#fff; font-weight:600; }
+.section { margin-top:25px; }
+.section-title { font-size:14px; font-weight:600; color:#888; margin-bottom:10px; text-transform:uppercase; }
+.section-item { padding:10px; background:#222; border-radius:6px; margin-bottom:8px; cursor:pointer; font-size:14px; }
+.section-item:hover { background:#2a2a2a; }
+.section-item.active { background:#0066ff; }
+.add-btn { padding:10px; border:2px dashed #444; border-radius:6px; text-align:center; cursor:pointer; color:#888; margin-top:8px; }
+.add-btn:hover { border-color:#0066ff; color:#0066ff; }
+.force-stop { margin-top:30px; padding:12px; background:#ff3333; border-radius:8px; text-align:center; cursor:pointer; font-weight:600; }
+.force-stop:hover { background:#ff0000; }
+
+/* CENTER AREA */
+.center { display:flex; flex-direction:column; background:#0f0f0f; }
+.chat-header { padding:15px 20px; background:#1a1a1a; border-bottom:1px solid #333; font-size:16px; font-weight:600; }
+.chat-area { flex:1; padding:20px; overflow-y:auto; }
+.message { padding:12px 16px; margin:10px 0; border-radius:12px; max-width:75%; font-size:14px; line-height:1.6; }
+.message.user { background:#0066ff; margin-left:auto; }
+.message.tim { background:#222; }
+.input-area { padding:15px; background:#1a1a1a; border-top:1px solid #333; display:flex; gap:10px; }
+.input-area input { flex:1; padding:12px 16px; background:#222; border:1px solid #444; border-radius:20px; color:#fff; outline:none; font-size:14px; }
+.input-area button { padding:12px 24px; background:#0066ff; border:none; border-radius:20px; color:#fff; cursor:pointer; font-weight:600; }
+.input-area button:hover { background:#0052cc; }
+
+/* RIGHT SIDEBAR - TASK PIPELINE */
+.right-sidebar { background:#1a1a1a; padding:20px; overflow-y:auto; border-left:1px solid #333; }
+.pipeline-section { margin-bottom:20px; }
+.pipeline-title { font-size:13px; font-weight:600; color:#888; margin-bottom:10px; text-transform:uppercase; }
+.task-item { padding:12px; background:#222; border-radius:6px; margin-bottom:8px; font-size:13px; cursor:pointer; }
+.task-item:hover { background:#2a2a2a; }
+.task-item.active { border-left:3px solid #0066ff; }
+
+/* MODALS */
+.modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; justify-content:center; align-items:center; }
+.modal.show { display:flex; }
+.modal-content { background:#1a1a1a; padding:30px; border-radius:12px; max-width:600px; width:90%; max-height:80%; overflow-y:auto; }
+.modal-header { font-size:18px; font-weight:700; margin-bottom:20px; }
+.modal-input { width:100%; padding:12px; background:#222; border:1px solid #444; border-radius:8px; color:#fff; margin-bottom:15px; font-size:14px; }
+.modal-textarea { width:100%; min-height:150px; padding:12px; background:#222; border:1px solid #444; border-radius:8px; color:#fff; margin-bottom:15px; font-size:14px; resize:vertical; }
+.modal-buttons { display:flex; gap:10px; justify-content:flex-end; }
+.modal-btn { padding:10px 20px; border:none; border-radius:8px; cursor:pointer; font-weight:600; }
+.modal-btn.primary { background:#0066ff; color:#fff; }
+.modal-btn.secondary { background:#333; color:#fff; }
+
+/* MOBILE */
+@media (max-width: 768px) {
+  body { grid-template-columns:1fr; }
+  .left-sidebar, .right-sidebar { display:none; }
+  .left-sidebar.mobile-open, .right-sidebar.mobile-open { display:block; position:fixed; z-index:100; width:80%; height:100%; }
+}
 </style>
 </head><body>
-<div class="sidebar">
-<h1>🐻 Tim v2.1</h1>
-<div class="status"><span class="status-dot"></span><span id="status">Idle</span></div>
-<div class="stat"><span>Model:</span><span id="model">Loading...</span></div>
-<div class="stat"><span>Skills:</span><span id="skills">0</span></div>
+
+<!-- LEFT SIDEBAR -->
+<div class="left-sidebar">
+  <div class="logo">🐻 Tim v2.1</div>
+  
+  <div class="status-box" onclick="showStatusDetails()">
+    <div><span class="status-dot"></span><span id="status-text">Idle</span></div>
+    <div class="info-row"><span class="info-label">Details:</span><span id="status-details">Ready</span></div>
+  </div>
+  
+  <div class="info-row"><span class="info-label">Model:</span><span class="info-value" id="model-name">qwen3:30b</span></div>
+  <div class="info-row"><span class="info-label">Skills:</span><span class="info-value" id="skills-count" onclick="showSkills()" style="cursor:pointer;color:#0066ff;">8</span></div>
+  
+  <div class="section">
+    <div class="section-title">Chats</div>
+    <div class="section-item active" onclick="switchChat('main')">💬 Main Chat</div>
+    <div class="section-item" onclick="switchChat('personal')">👤 Personal Chat</div>
+    <div class="add-btn" onclick="showAddChat()">+ Add Custom Chat</div>
+  </div>
+  
+  <div class="section">
+    <div class="section-title">Projects</div>
+    <div class="add-btn" onclick="showAddProject('normal')">+ New Project</div>
+  </div>
+  
+  <div class="section">
+    <div class="section-title">Limited Projects</div>
+    <div class="add-btn" onclick="showAddProject('limited')">+ New Limited Project</div>
+  </div>
+  
+  <div class="section">
+    <div class="section-title">Journal</div>
+    <div class="section-item" onclick="showJournal()">📖 Tim's Journal</div>
+  </div>
+  
+  <div class="force-stop" onclick="showForceStop()">⚠️ Force Stop</div>
 </div>
-<div class="main">
-<div class="chat" id="chat"></div>
-<div class="input-area">
-<input id="input" placeholder="Message Tim..." />
-<button onclick="send()">Send</button>
+
+<!-- CENTER CHAT AREA -->
+<div class="center">
+  <div class="chat-header" id="chat-header">Main Chat</div>
+  <div class="chat-area" id="chat-area"></div>
+  <div class="input-area">
+    <input type="text" id="msg-input" placeholder="Message Tim..." />
+    <button onclick="sendMessage()">Send</button>
+  </div>
 </div>
+
+<!-- RIGHT SIDEBAR - TASK PIPELINE -->
+<div class="right-sidebar">
+  <div class="pipeline-section">
+    <div class="pipeline-title">📋 Todo</div>
+    <div id="todo-list"></div>
+    <div class="add-btn" onclick="showAddTask()">+ Add Task</div>
+  </div>
+  
+  <div class="pipeline-section">
+    <div class="pipeline-title">🤔 Thinking</div>
+    <div id="thinking-list"></div>
+  </div>
+  
+  <div class="pipeline-section">
+    <div class="pipeline-title">🔍 Researching</div>
+    <div id="research-list"></div>
+  </div>
+  
+  <div class="pipeline-section">
+    <div class="pipeline-title">📝 Reasoning 2</div>
+    <div id="reasoning2-list"></div>
+  </div>
+  
+  <div class="pipeline-section">
+    <div class="pipeline-title">⚡ Actions</div>
+    <div id="actions-list"></div>
+  </div>
+  
+  <div class="pipeline-section">
+    <div class="pipeline-title">✅ Summary</div>
+    <div id="summary-list"></div>
+  </div>
+  
+  <div class="add-btn" onclick="showFinished()">📦 View Finished</div>
+</div>
+
+<!-- MODALS -->
+<div id="addTaskModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">Add New Task</div>
+    <input type="text" id="task-name" class="modal-input" placeholder="Task name..." />
+    <textarea id="task-prompt" class="modal-textarea" placeholder="Describe what you want Tim to do..."></textarea>
+    <div class="modal-buttons">
+      <button class="modal-btn secondary" onclick="closeModal('addTaskModal')">Cancel</button>
+      <button class="modal-btn primary" onclick="createTask()">Create Task</button>
+    </div>
+  </div>
+</div>
+
+<div id="addChatModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">Create Custom Chat</div>
+    <input type="text" id="chat-name" class="modal-input" placeholder="Chat name..." />
+    <textarea id="chat-context" class="modal-textarea" placeholder="What is this chat for?"></textarea>
+    <div class="modal-buttons">
+      <button class="modal-btn secondary" onclick="closeModal('addChatModal')">Cancel</button>
+      <button class="modal-btn primary" onclick="createChat()">Create</button>
+    </div>
+  </div>
+</div>
+
+<div id="addProjectModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">Create Project</div>
+    <input type="text" id="project-name" class="modal-input" placeholder="Project name..." />
+    <textarea id="project-context" class="modal-textarea" placeholder="Project context and information..."></textarea>
+    <div class="modal-buttons">
+      <button class="modal-btn secondary" onclick="closeModal('addProjectModal')">Cancel</button>
+      <button class="modal-btn primary" onclick="createProject()">Create</button>
+    </div>
+  </div>
 </div>
 
 <script>
 const API = 'http://100.91.84.94:5000';
+let currentChat = 'main';
+let projectType = 'normal';
 
-// Load config
-fetch(`${API}/api/config`).then(r=>r.json()).then(d=>{
-  document.getElementById('model').textContent = d.model.split(':')[0];
-  document.getElementById('skills').textContent = d.skills;
-});
-
-// Poll status
-setInterval(()=>{
-  fetch(`${API}/api/status`).then(r=>r.json()).then(d=>{
-    document.getElementById('status').textContent = d.status;
-  });
-}, 2000);
-
-function addMsg(text, isUser) {
-  const m = document.createElement('div');
-  m.className = `message ${isUser?'user':'tim'}`;
-  m.textContent = text;
-  document.getElementById('chat').appendChild(m);
-  document.getElementById('chat').scrollTop = 999999;
+// Initialize
+async function init() {
+  loadConfig();
+  loadTasks();
+  pollStatus();
+  loadMessages();
 }
 
-async function send() {
-  const msg = document.getElementById('input').value.trim();
+async function loadConfig() {
+  try {
+    const res = await fetch(`${API}/api/config`);
+    const data = await res.json();
+    document.getElementById('model-name').textContent = data.model.split(':')[0];
+    document.getElementById('skills-count').textContent = data.skills;
+  } catch(e) {
+    console.error('Failed to load config:', e);
+  }
+}
+
+function pollStatus() {
+  setInterval(async () => {
+    try {
+      const res = await fetch(`${API}/api/status`);
+      const data = await res.json();
+      document.getElementById('status-text').textContent = data.status;
+      document.getElementById('status-details').textContent = data.details || 'Ready';
+    } catch(e) {}
+  }, 2000);
+}
+
+async function loadTasks() {
+  try {
+    const res = await fetch(`${API}/api/tasks`);
+    const tasks = await res.json();
+    
+    // Clear all lists
+    ['todo', 'thinking', 'research', 'reasoning2', 'actions', 'summary'].forEach(stage => {
+      document.getElementById(`${stage}-list`).innerHTML = '';
+    });
+    
+    // Populate tasks
+    tasks.forEach(task => {
+      const el = document.createElement('div');
+      el.className = 'task-item';
+      el.textContent = task.name;
+      el.onclick = () => showTaskDetails(task.id);
+      
+      const listId = task.stage === 'todo' ? 'todo-list' : 
+                     task.stage === 'thinking' ? 'thinking-list' :
+                     task.stage === 'research' ? 'research-list' :
+                     task.stage === 'reasoning2' ? 'reasoning2-list' :
+                     task.stage === 'actions' ? 'actions-list' : 'summary-list';
+      
+      document.getElementById(listId).appendChild(el);
+    });
+  } catch(e) {}
+}
+
+function loadMessages() {
+  const saved = localStorage.getItem(`tim_chat_${currentChat}`);
+  if (saved) {
+    document.getElementById('chat-area').innerHTML = saved;
+  }
+}
+
+function saveMessages() {
+  localStorage.setItem(`tim_chat_${currentChat}`, document.getElementById('chat-area').innerHTML);
+}
+
+function addMessage(text, isUser) {
+  const m = document.createElement('div');
+  m.className = `message ${isUser ? 'user' : 'tim'}`;
+  m.textContent = text;
+  document.getElementById('chat-area').appendChild(m);
+  document.getElementById('chat-area').scrollTop = 999999;
+  saveMessages();
+}
+
+async function sendMessage() {
+  const input = document.getElementById('msg-input');
+  const msg = input.value.trim();
   if (!msg) return;
   
-  addMsg(msg, true);
-  document.getElementById('input').value = '';
+  addMessage(msg, true);
+  input.value = '';
   
-  const res = await fetch(`${API}/api/chat`, {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({message: msg})
-  });
-  
-  const data = await res.json();
-  addMsg(data.response, false);
+  try {
+    const res = await fetch(`${API}/api/chat`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({message: msg, type: currentChat})
+    });
+    const data = await res.json();
+    addMessage(data.response, false);
+  } catch(e) {
+    addMessage('Error: Could not connect to Tim', false);
+  }
 }
 
-document.getElementById('input').addEventListener('keypress', e => {
-  if (e.key === 'Enter') send();
+function switchChat(type) {
+  currentChat = type;
+  document.getElementById('chat-header').textContent = 
+    type === 'main' ? 'Main Chat' : 
+    type === 'personal' ? 'Personal Chat' : type;
+  document.getElementById('chat-area').innerHTML = '';
+  loadMessages();
+  
+  document.querySelectorAll('.section-item').forEach(el => el.classList.remove('active'));
+  event.target.classList.add('active');
+}
+
+function showAddTask() {
+  document.getElementById('addTaskModal').classList.add('show');
+}
+
+async function createTask() {
+  const name = document.getElementById('task-name').value;
+  const prompt = document.getElementById('task-prompt').value;
+  
+  if (!name || !prompt) return alert('Please fill all fields');
+  
+  await fetch(`${API}/api/tasks`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({name, prompt})
+  });
+  
+  closeModal('addTaskModal');
+  loadTasks();
+}
+
+function showAddChat() {
+  document.getElementById('addChatModal').classList.add('show');
+}
+
+function createChat() {
+  const name = document.getElementById('chat-name').value;
+  if (!name) return;
+  // TODO: Save to backend
+  closeModal('addChatModal');
+}
+
+function showAddProject(type) {
+  projectType = type;
+  document.getElementById('addProjectModal').classList.add('show');
+}
+
+function createProject() {
+  // TODO: Save to backend
+  closeModal('addProjectModal');
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('show');
+}
+
+function showSkills() {
+  alert('Skills:\n• Chat\n• Search Web\n• Execute Commands\n• Code Generation\n• File Operations\n• Memory\n• Reasoning\n• Task Management');
+}
+
+function showStatusDetails() {
+  alert('Status details modal - TODO');
+}
+
+function showJournal() {
+  alert('Journal view - TODO');
+}
+
+function showFinished() {
+  alert('Finished tasks archive - TODO');
+}
+
+function showForceStop() {
+  if (confirm('Stop Tim? (Idle for 2 min or Unplug completely)')) {
+    fetch(`${API}/api/emergency/stop`, {method: 'POST'});
+  }
+}
+
+document.getElementById('msg-input').addEventListener('keypress', e => {
+  if (e.key === 'Enter') sendMessage();
 });
+
+init();
 </script>
 </body></html>
