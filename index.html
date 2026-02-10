@@ -190,15 +190,16 @@ body { display:grid; grid-template-columns:280px 1fr 320px; height:100vh; backgr
 
 <script>
 const API = 'http://100.91.84.94:5000';
-let currentChat = 'main';
+let currentChatId = null;
+let allChats = [];
 let projectType = 'normal';
 
 // Initialize
 async function init() {
-  loadConfig();
+  await loadConfig();
+  await loadChats();
   loadTasks();
   pollStatus();
-  loadMessages();
 }
 
 async function loadConfig() {
@@ -221,6 +222,38 @@ function pollStatus() {
       document.getElementById('status-details').textContent = data.details || 'Ready';
     } catch(e) {}
   }, 2000);
+}
+
+async function loadChats() {
+  try {
+    const res = await fetch(`${API}/api/chats`);
+    allChats = await res.json();
+    
+    // Find main chat
+    const mainChat = allChats.find(c => c.type === 'main');
+    if (mainChat) {
+      currentChatId = mainChat.id;
+      await loadMessages(mainChat.id);
+    }
+    
+    // Populate chat list in sidebar
+    const chatsSection = document.querySelector('.section');
+    const existingItems = chatsSection.querySelectorAll('.section-item');
+    existingItems.forEach(item => item.remove());
+    
+    allChats.forEach(chat => {
+      const el = document.createElement('div');
+      el.className = 'section-item';
+      if (chat.id === currentChatId) el.classList.add('active');
+      el.textContent = chat.type === 'main' ? '💬 Main Chat' : 
+                       chat.type === 'personal' ? '👤 Personal Chat' : 
+                       `📝 ${chat.name}`;
+      el.onclick = () => switchChat(chat.id, chat.name);
+      chatsSection.insertBefore(el, chatsSection.querySelector('.add-btn'));
+    });
+  } catch(e) {
+    console.error('Failed to load chats:', e);
+  }
 }
 
 async function loadTasks() {
@@ -251,15 +284,25 @@ async function loadTasks() {
   } catch(e) {}
 }
 
-function loadMessages() {
-  const saved = localStorage.getItem(`tim_chat_${currentChat}`);
-  if (saved) {
-    document.getElementById('chat-area').innerHTML = saved;
+async function loadMessages(chatId) {
+  try {
+    const res = await fetch(`${API}/api/chats/${chatId}/messages`);
+    const messages = await res.json();
+    
+    const chatArea = document.getElementById('chat-area');
+    chatArea.innerHTML = '';
+    
+    messages.forEach(msg => {
+      const m = document.createElement('div');
+      m.className = `message ${msg.role === 'user' ? 'user' : 'tim'}`;
+      m.textContent = msg.content;
+      chatArea.appendChild(m);
+    });
+    
+    chatArea.scrollTop = 999999;
+  } catch(e) {
+    console.error('Failed to load messages:', e);
   }
-}
-
-function saveMessages() {
-  localStorage.setItem(`tim_chat_${currentChat}`, document.getElementById('chat-area').innerHTML);
 }
 
 function addMessage(text, isUser) {
@@ -268,37 +311,49 @@ function addMessage(text, isUser) {
   m.textContent = text;
   document.getElementById('chat-area').appendChild(m);
   document.getElementById('chat-area').scrollTop = 999999;
-  saveMessages();
 }
 
 async function sendMessage() {
   const input = document.getElementById('msg-input');
   const msg = input.value.trim();
-  if (!msg) return;
+  if (!msg || !currentChatId) return;
   
   addMessage(msg, true);
   input.value = '';
   
+  // Save user message to database
+  await fetch(`${API}/api/chats/${currentChatId}/messages`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({role: 'user', content: msg})
+  });
+  
   try {
+    // Get Tim's response
     const res = await fetch(`${API}/api/chat`, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({message: msg, type: currentChat})
+      body: JSON.stringify({message: msg, type: 'main'})
     });
     const data = await res.json();
+    
     addMessage(data.response, false);
+    
+    // Save Tim's response to database
+    await fetch(`${API}/api/chats/${currentChatId}/messages`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({role: 'assistant', content: data.response})
+    });
   } catch(e) {
     addMessage('Error: Could not connect to Tim', false);
   }
 }
 
-function switchChat(type) {
-  currentChat = type;
-  document.getElementById('chat-header').textContent = 
-    type === 'main' ? 'Main Chat' : 
-    type === 'personal' ? 'Personal Chat' : type;
-  document.getElementById('chat-area').innerHTML = '';
-  loadMessages();
+async function switchChat(chatId, chatName) {
+  currentChatId = chatId;
+  document.getElementById('chat-header').textContent = chatName;
+  await loadMessages(chatId);
   
   document.querySelectorAll('.section-item').forEach(el => el.classList.remove('active'));
   event.target.classList.add('active');
@@ -328,11 +383,25 @@ function showAddChat() {
   document.getElementById('addChatModal').classList.add('show');
 }
 
-function createChat() {
+async function createChat() {
   const name = document.getElementById('chat-name').value;
-  if (!name) return;
-  // TODO: Save to backend
-  closeModal('addChatModal');
+  const context = document.getElementById('chat-context').value;
+  if (!name) return alert('Please enter a chat name');
+  
+  try {
+    await fetch(`${API}/api/chats`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({name, context})
+    });
+    
+    closeModal('addChatModal');
+    document.getElementById('chat-name').value = '';
+    document.getElementById('chat-context').value = '';
+    await loadChats();
+  } catch(e) {
+    alert('Failed to create chat');
+  }
 }
 
 function showAddProject(type) {
