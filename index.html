@@ -241,11 +241,29 @@ body { display:grid; grid-template-columns:280px 1fr 320px; height:100vh; backgr
 </div>
 
 <script>
-const API = 'http://100.91.84.94:5000';
+const POSSIBLE_APIS = [
+  'http://100.91.84.94:5000',  // Tailscale (works anywhere if phone has Tailscale)
+  'http://192.168.1.253:5000'   // Local WiFi (works if on same network)
+];
+let API = null;
 let currentChatId = null;
 let allChats = [];
 let isConnected = false;
 let projectType = 'normal';
+
+async function findWorkingAPI() {
+  for (const url of POSSIBLE_APIS) {
+    try {
+      const res = await fetch(`${url}/api/config`, { signal: AbortSignal.timeout(2000) });
+      if (res.ok) {
+        API = url;
+        console.log('Connected via:', url);
+        return true;
+      }
+    } catch(e) {}
+  }
+  return false;
+}
 
 function showAlert(title, message) {
   document.getElementById('alert-title').textContent = title;
@@ -278,6 +296,16 @@ async function checkConnection() {
 }
 
 async function init() {
+  const found = await findWorkingAPI();
+  if (!found) {
+    document.getElementById('chat-area').innerHTML = '<div class="message tim">❌ Cannot connect to Tim.<br><br>Make sure:<br>1. Backend is running on your Mac<br>2. Phone is on same WiFi OR has Tailscale app</div>';
+    document.getElementById('status-dot').className = 'status-dot disconnected';
+    document.getElementById('status-text').textContent = 'Not Connected';
+    document.getElementById('status-details').textContent = 'Cannot reach backend';
+    showAlert('Connection Error', 'Cannot reach Tim backend. Make sure your Mac is running the server and phone is on same WiFi (or install Tailscale on phone).');
+    return;
+  }
+  
   const connected = await checkConnection();
   if (!connected) {
     document.getElementById('chat-area').innerHTML = '<div class="message tim">❌ Cannot connect to Tim. Make sure backend is running on your Mac.</div>';
