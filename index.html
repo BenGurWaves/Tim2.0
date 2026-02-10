@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tim 🐻</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; font-family:-apple-system,sans-serif; }
+body { display:flex; height:100vh; background:#1a1a1a; color:#fff; }
+.sidebar { width:250px; background:#0a0a0a; padding:20px; border-right:1px solid #333; overflow-y:auto; }
+.sidebar h1 { font-size:18px; margin-bottom:20px; }
+.status { padding:12px; background:#222; border-radius:8px; margin-bottom:15px; font-size:13px; }
+.status-dot { display:inline-block; width:8px; height:8px; background:#0f0; border-radius:50%; margin-right:8px; }
+.stat { display:flex; justify-content:space-between; font-size:12px; margin:8px 0; }
+.main { flex:1; display:flex; flex-direction:column; }
+.chat { flex:1; padding:20px; overflow-y:auto; }
+.message { padding:12px; margin:10px 0; border-radius:12px; max-width:70%; }
+.user { background:#0066ff; margin-left:auto; }
+.tim { background:#222; }
+.input-area { padding:15px; border-top:1px solid #333; display:flex; gap:10px; }
+input { flex:1; padding:12px; background:#222; border:1px solid #444; border-radius:20px; color:#fff; outline:none; }
+button { padding:12px 24px; background:#0066ff; border:none; border-radius:20px; color:#fff; cursor:pointer; }
+</style>
+</head><body>
+<div class="sidebar">
+<h1>🐻 Tim v2.1</h1>
+<div class="status"><span class="status-dot"></span><span id="status">Idle</span></div>
+<div class="stat"><span>Model:</span><span id="model">Loading...</span></div>
+<div class="stat"><span>Skills:</span><span id="skills">0</span></div>
+</div>
+<div class="main">
+<div class="chat" id="chat"></div>
+<div class="input-area">
+<input id="input" placeholder="Message Tim..." />
+<button onclick="send()">Send</button>
+</div>
+</div>
+
+<script>
+const API = 'http://localhost:5000';
+
+// Load config
+fetch(`${API}/api/config`).then(r=>r.json()).then(d=>{
+  document.getElementById('model').textContent = d.model.split(':')[0];
+  document.getElementById('skills').textContent = d.skills;
+});
+
+// Poll status
+setInterval(()=>{
+  fetch(`${API}/api/status`).then(r=>r.json()).then(d=>{
+    document.getElementById('status').textContent = d.status;
+  });
+}, 2000);
+
+function addMsg(text, isUser) {
+  const m = document.createElement('div');
+  m.className = `message ${isUser?'user':'tim'}`;
+  m.textContent = text;
+  document.getElementById('chat').appendChild(m);
+  document.getElementById('chat').scrollTop = 999999;
+}
+
+async function send() {
+  const msg = document.getElementById('input').value.trim();
+  if (!msg) return;
+  
+  addMsg(msg, true);
+  document.getElementById('input').value = '';
+  
+  const res = await fetch(`${API}/api/chat`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({message: msg})
+  });
+  
+  const data = await res.json();
+  addMsg(data.response, false);
+}
+
+document.getElementById('input').addEventListener('keypress', e => {
+  if (e.key === 'Enter') send();
+});
+</script>
+</body></html>
